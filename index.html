@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClinApp — Gestão de Agenda Clínica</title>
+  <style>
+    :root {
+      --pr: #1D9E75;
+      --pr-l: #E1F5EE;
+      --pr-d: #085041;
+      --ac: #D85A30;
+      --ac-l: #FAECE7;
+      --nh: 56px;
+      --bg: #F5F5F3;
+      --bg2: #FFFFFF;
+      --surface: #FFFFFF;
+      --border: rgba(0,0,0,0.1);
+      --border2: rgba(0,0,0,0.18);
+      --text: #1a1a1a;
+      --text2: #666;
+      --text3: #999;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --bg2: #242424;
+        --surface: #2a2a2a;
+        --border: rgba(255,255,255,0.1);
+        --border2: rgba(255,255,255,0.18);
+        --text: #f0f0f0;
+        --text2: #aaa;
+        --text3: #666;
+        --pr-l: #0a3d2e;
+        --pr-d: #5DCAA5;
+        --ac-l: #3d1a0a;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    /* ── NAV ── */
+    .topnav {
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      height: var(--nh);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--pr-d);
+      margin-right: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-tabs { display: flex; flex: 1; }
+
+    .nav-tab {
+      padding: 0 1rem;
+      height: var(--nh);
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text2);
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s;
+      font-family: inherit;
+    }
+
+    .nav-tab.active { color: var(--pr); border-bottom-color: var(--pr); font-weight: 500; }
+    .nav-tab:hover { color: var(--text); }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+
+    .nav-user { font-size: 12px; color: var(--text2); }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--pr-l);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--pr-d);
+    }
+
+    /* ── VIEWS ── */
+    .view { display: none; padding: 1.5rem; max-width: 920px; margin: 0 auto; }
+    .view.active { display: block; }
+
+    /* ── METRICS ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .metric-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .metric-value { font-size: 26px; font-weight: 600; color: var(--text); }
+    .metric-sub { font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+    /* ── SECTION HEADER ── */
+    .sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .st { font-size: 14px; font-weight: 600; color: var(--text); }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── APPOINTMENT ITEM ── */
+    .ai { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .ai:last-child { border-bottom: none; }
+    .at { font-size: 11px; color: var(--text2); min-width: 44px; font-weight: 500; }
+    .adot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dp { background: var(--pr); }
+    .dn { background: var(--ac); }
+    .an { flex: 1; }
+    .aname { font-size: 13px; font-weight: 500; color: var(--text); }
+    .atype { font-size: 11px; color: var(--text2); }
+
+    /* ── BADGES ── */
+    .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .bok   { background: var(--pr-l); color: var(--pr-d); }
+    .bpend { background: #FAEEDA; color: #633806; }
+    .bcnl  { background: #FCEBEB; color: #791F1F; }
+    .bpsico { background: var(--pr-l); color: var(--pr-d); }
+    .bnutri { background: var(--ac-l); color: #712B13; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border2);
+      background: var(--surface);
+      cursor: pointer;
+      color: var(--text);
+      font-weight: 500;
+      font-family: inherit;
+      transition: background 0.12s;
+    }
+
+    .btn:hover { background: var(--bg); }
+    .btnp { background: var(--pr); color: #fff; border-color: var(--pr); }
+    .btnp:hover { background: var(--pr-d); }
+
+    /* ── PATIENTS ── */
+    .pi { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: opacity 0.12s; }
+    .pi:last-child { border-bottom: none; }
+    .pi:hover { opacity: 0.75; }
+    .pav { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .avp { background: var(--pr-l); color: var(--pr-d); }
+    .avn { background: var(--ac-l); color: #712B13; }
+    .pn { flex: 1; }
+    .pname { font-size: 13px; font-weight: 500; color: var(--text); }
+    .pmeta { font-size: 11px; color: var(--text2); }
+    .sel-pat { background: var(--pr-l); border-radius: var(--radius); padding: 8px; margin: -2px; }
+
+    /* ── FORM ── */
+    .fg { margin-bottom: 12px; }
+    .fl { font-size: 11px; color: var(--text2); margin-bottom: 4px; display: block; font-weight: 500; }
+    .fi {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      font-size: 13px;
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      transition: border-color 0.12s;
+    }
+    .fi:focus { outline: none; border-color: var(--pr); box-shadow: 0 0 0 3px rgba(29,158,117,0.1); }
+    textarea.fi { resize: vertical; min-height: 80px; }
+    .si { width: 100%; padding: 8px 12px; border: 1px solid var(--border2); border-radius: var(--radius); font-size: 13px; background: var(--surface); color: var(--text); margin-bottom: 1rem; font-family: inherit; }
+    .si:focus { outline: none; border-color: var(--pr); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── WEEK GRID ── */
+    .wg {
+      display: grid;
+      grid-template-columns: 52px repeat(5, 1fr);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--surface);
+      margin-bottom: 1rem;
+    }
+
+    .wh {
+      background: var(--bg);
+      padding: 8px 4px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text2);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .wht { color: var(--pr); }
+    .ts { padding: 3px 4px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 48px; position: relative; }
+    .tl { font-size: 9px; color: var(--text3); }
+    .ab { position: absolute; left: 2px; right: 2px; top: 2px; border-radius: 4px; padding: 2px 4px; font-size: 10px; font-weight: 500; overflow: hidden; cursor: pointer; line-height: 1.4; }
+    .abp { background: #d4f0e5; color: var(--pr-d); border-left: 2px solid var(--pr); }
+    .abn { background: #fcdfd0; color: #712B13; border-left: 2px solid var(--ac); }
+
+    /* ── PANEL ── */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+
+    /* ── PRONTUARIO NOTES ── */
+    .ni { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .ni:last-child { border-bottom: none; }
+    .nd { font-size: 10px; color: var(--text3); margin-bottom: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+    .ntit { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .nc { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+    /* ── TWO COLUMN ── */
+    .two { display: grid; grid-template-columns: 1fr 1.6fr; gap: 1.25rem; }
+    .pr-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+    .pr-av { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+    .empty { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 13px; }
+    .sep { margin: 0 4px; color: var(--text3); }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--text);
+      color: var(--bg);
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .grid2 { grid-template-columns: 1fr; }
+      .two { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .nav-user { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="brand">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="8.5" stroke="#1D9E75" stroke-width="1.5"/>
+      <path d="M6.5 10h7M10 6.5v7" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    ClinApp
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-v="dashboard" onclick="sv('dashboard')">Dashboard</button>
+    <button class="nav-tab" data-v="agenda" onclick="sv('agenda')">Agenda</button>
+    <button class="nav-tab" data-v="pacientes" onclick="sv('pacientes')">Pacientes</button>
+    <button class="nav-tab" data-v="prontuario" onclick="sv('prontuario')">Prontuário</button>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user">Dra. Marina Lima</span>
+    <div class="avatar">ML</div>
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="view active" id="view-dashboard">
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Consultas hoje</div>
+      <div class="metric-value" id="m0">3</div>
+      <div class="metric-sub">Dom, 03 mai 2026</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Esta semana</div>
+      <div class="metric-value">7</div>
+      <div class="metric-sub">2 pendentes</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Pacientes ativos</div>
+      <div class="metric-value" id="m2">5</div>
+      <div class="metric-sub">3 psico · 2 nutri</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Lembretes enviados</div>
+      <div class="metric-value">12</div>
+      <div class="metric-sub">esta semana</div>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <div class="sh">
+        <span class="st">Hoje</span>
+        <button class="btn" onclick="sv('agenda')">Ver agenda →</button>
+      </div>
+      <div class="card" id="dash-today"></div>
+    </div>
+    <div>
+      <div class="sh"><span class="st">Lembretes pendentes</span></div>
+      <div class="card" id="dash-rem"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AGENDA -->
+<div class="view" id="view-agenda">
+  <div class="sh">
+    <span class="st">Semana de 03–07 mai 2026</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn">← Anterior</button>
+      <button class="btn">Próxima →</button>
+      <button class="btn btnp" onclick="tgAppt()">+ Consulta</button>
+    </div>
+  </div>
+  <div id="add-appt" style="display:none" class="panel">
+    <div class="sh">
+      <span class="st">Nova consulta</span>
+      <button class="btn" onclick="tgAppt()">✕</button>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label class="fl">Paciente</label><select class="fi" id="ap-pat"></select></div>
+      <div class="fg"><label class="fl">Tipo</label>
+        <select class="fi" id="ap-typ">
+          <option>Sessão</option><option>Retorno</option>
+          <option>Avaliação</option><option>1ª Consulta</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Data</label><input type="date" class="fi" id="ap-dat" value="2026-05-04"></div>
+      <div class="fg"><label class="fl">Horário</label><input type="time" class="fi" id="ap-tim" value="09:00"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+      <button class="btn" onclick="tgAppt()">Cancelar</button>
+      <button class="btn btnp" onclick="addAppt()">Confirmar</button>
+    </div>
+  </div>
+  <div class="wg" id="week-grid"></div>
+</div>
+
+<!-- PACIENTES -->
+<div class="view" id="view-pacientes">
+  <div class="sh">
+    <span class="st">Pacientes</span>
+    <button class="btn btnp" onclick="tgAddPat()">+ Novo paciente</button>
+  </div>
+  <div id="add-pat" style="display:none" class="panel">
+    <div class="st" style="margin-bottom:1rem">Cadastrar novo paciente</div>
+    <div class="grid2">
+      <div class="fg"><label class="fl">Nome completo</label><input type="text" class="fi" id="pp-n" placeholder="Nome do paciente"></div>
+      <div class="fg"><label class="fl">Especialidade</label>
+        <select class="fi" id="pp-t">
+          <option value="psicologia">Psicologia</option>
+          <option value="nutricao">Nutrição</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Telefone</label><input type="text" class="fi" id="pp-ph" placeholder="(61) 99999-0000"></div>
+      <div class="fg"><label class="fl">Email</label><input type="email" class="fi" id="pp-e" placeholder="email@exemplo.com"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+      <button class="btn" onclick="tgAddPat()">Cancelar</button>
+      <button class="btn btnp" onclick="addPat()">Cadastrar</button>
+    </div>
+  </div>
+  <input type="text" class="si" placeholder="Buscar paciente por nome..." oninput="renderPats(this.value)">
+  <div class="card" id="pat-list"></div>
+</div>
+
+<!-- PRONTUARIO -->
+<div class="view" id="view-prontuario">
+  <div class="two">
+    <div>
+      <div class="sh"><span class="st">Pacientes</span></div>
+      <div class="card" id="pron-pats"></div>
+    </div>
+    <div id="pron-main">
+      <div class="empty">Selecione um paciente para ver o prontuário</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ── DATA ── */
+  const TODAY = "2026-05-03";
+  const WDATES = ["2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-05-07"];
+  const WDAYS  = ["Dom 03","Seg 04","Ter 05","Qua 06","Qui 07"];
+  const HRS    = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"];
+  let nid = 100;
+  let selPat = null;
+
+  let pats = [
+    { id:1, name:"Ana Clara Santos",  type:"psicologia", phone:"(61) 99999-0001", email:"ana.santos@email.com",  since:"15/01/2024", sessions:13, av:"AC" },
+    { id:2, name:"Bruno Ferreira",    type:"nutricao",   phone:"(61) 99999-0002", email:"bruno.f@email.com",     since:"20/03/2024", sessions:6,  av:"BF" },
+    { id:3, name:"Carla Mendes",      type:"psicologia", phone:"(61) 99999-0003", email:"carla.m@email.com",     since:"08/11/2023", sessions:24, av:"CM" },
+    { id:4, name:"Diego Oliveira",    type:"nutricao",   phone:"(61) 99999-0004", email:"diego.o@email.com",     since:"14/02/2024", sessions:9,  av:"DO" },
+    { id:5, name:"Elena Costa",       type:"psicologia", phone:"(61) 99999-0005", email:"elena.c@email.com",     since:"01/05/2024", sessions:2,  av:"EC" },
+  ];
+
+  let appts = [
+    { id:1, pid:1, date:"2026-05-03", time:"09:00", type:"Sessão",    status:"confirmado" },
+    { id:2, pid:3, date:"2026-05-03", time:"10:30", type:"Sessão",    status:"confirmado" },
+    { id:3, pid:2, date:"2026-05-03", time:"14:00", type:"Retorno",   status:"pendente"   },
+    { id:4, pid:4, date:"2026-05-04", time:"09:00", type:"Avaliação", status:"confirmado" },
+    { id:5, pid:5, date:"2026-05-04", time:"11:00", type:"Sessão",    status:"confirmado" },
+    { id:6, pid:1, date:"2026-05-05", time:"09:00", type:"Sessão",    status:"confirmado" },
+    { id:7, pid:3, date:"2026-05-06", time:"10:00", type:"Sessão",    status:"pendente"   },
+  ];
+
+  let recs = [
+    { id:1, pid:1, date:"2026-04-19", title:"Sessão 11", text:"Trabalhamos técnicas de respiração e reestruturação cognitiva. Paciente relatou redução na frequência de episódios de ansiedade. Tarefa: registro de pensamentos automáticos diariamente." },
+    { id:2, pid:1, date:"2026-04-26", title:"Sessão 12", text:"Revisão dos registros de pensamentos automáticos. Progresso significativo. Discutimos estratégias de exposição gradual para situações sociais. Paciente demonstra motivação e engajamento." },
+    { id:3, pid:3, date:"2026-04-12", title:"Sessão 22", text:"Exploração de padrões relacionais familiares. Exercício de auto-compaixão realizado na sessão. Lição de casa: diário de emoções por 7 dias, registrando gatilhos e intensidade." },
+    { id:4, pid:3, date:"2026-04-26", title:"Sessão 23", text:"Revisão do diário. Identificamos hipervigilância em ambientes de trabalho. Introdução à técnica de observação sem julgamento. Evoluindo bem com fronteiras emocionais." },
+    { id:5, pid:2, date:"2026-04-10", title:"Consulta 4", text:"Avaliação de composição corporal: IMC 24.1. Ajuste no plano alimentar — redução de carboidratos refinados, aumento de proteína no café da manhã. Meta de hidratação: 2,5L/dia." },
+    { id:6, pid:4, date:"2026-04-28", title:"Consulta 8", text:"Acompanhamento: perda de 2,3kg em 4 semanas. Revisão do cardápio semanal. Dificuldades no jantar pós-trabalho. Estratégia: preparação de marmitas aos domingos." },
+  ];
+
+  /* ── HELPERS ── */
+  function gp(id) { return pats.find(p => p.id === id); }
+
+  function badge(s) {
+    if (s === "confirmado") return '<span class="badge bok">Confirmado</span>';
+    if (s === "pendente")   return '<span class="badge bpend">Pendente</span>';
+    return '<span class="badge bcnl">Cancelado</span>';
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  /* ── NAVIGATION ── */
+  function sv(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.v === name));
+    document.getElementById('view-' + name).classList.add('active');
+    if (name === 'dashboard')  rdash();
+    if (name === 'agenda')     ragenda();
+    if (name === 'pacientes')  renderPats('');
+    if (name === 'prontuario') rpronPats();
+  }
+
+  /* ── DASHBOARD ── */
+  function rdash() {
+    const tod = appts.filter(a => a.date === TODAY).sort((a,b) => a.time.localeCompare(b.time));
+    document.getElementById('dash-today').innerHTML = tod.length
+      ? tod.map(a => {
+          const p = gp(a.pid);
+          return `<div class="ai">
+            <span class="at">${a.time}</span>
+            <div class="adot ${p.type === 'psicologia' ? 'dp' : 'dn'}"></div>
+            <div class="an">
+              <div class="aname">${p.name}</div>
+              <div class="atype">${a.type} · ${p.type === 'psicologia' ? 'Psicologia' : 'Nutrição'}</div>
+            </div>
+            ${badge(a.status)}
+          </div>`;
+        }).join('')
+      : '<p style="font-size:12px;color:var(--text2)">Nenhuma consulta hoje</p>';
+
+    const pend = appts.filter(a => a.date > TODAY && a.status === 'pendente');
+    document.getElementById('dash-rem').innerHTML = pend.length
+      ? pend.map(a => {
+          const p = gp(a.pid);
+          return `<div class="ai">
+            <div class="an">
+              <div class="aname">${p.name}</div>
+              <div class="atype">${a.date.split('-').reverse().join('/')} às ${a.time} · ${a.type}</div>
+            </div>
+            <button class="btn btnp" onclick="sendRem(${a.id})">Enviar lembrete</button>
+          </div>`;
+        }).join('')
+      : '<p style="font-size:12px;color:var(--text2)">Nenhum lembrete pendente</p>';
+  }
+
+  function sendRem(id) {
+    const a = appts.find(x => x.id === id);
+    if (a) { a.status = 'confirmado'; rdash(); toast('✓ Lembrete enviado para ' + gp(a.pid).name); }
+  }
+
+  /* ── AGENDA ── */
+  function ragenda() {
+    const sel = document.getElementById('ap-pat');
+    if (sel) sel.innerHTML = pats.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    let h = '<div class="wh" style="border-right:1px solid var(--border)"></div>';
+    WDAYS.forEach((d, i) => {
+      h += `<div class="wh${i === 0 ? ' wht' : ''}" style="border-right:1px solid var(--border)">${d}</div>`;
+    });
+
+    HRS.forEach(hr => {
+      h += `<div class="ts" style="border-right:1px solid var(--border)"><span class="tl">${hr}</span></div>`;
+      WDATES.forEach(date => {
+        const a = appts.find(x => x.date === date && x.time === hr);
+        let inner = '';
+        if (a) {
+          const p = gp(a.pid);
+          inner = `<div class="ab ${p.type === 'psicologia' ? 'abp' : 'abn'}" title="${p.name} — ${a.type}">${p.name.split(' ')[0]}<br>${a.type}</div>`;
+        }
+        h += `<div class="ts" style="border-right:1px solid var(--border)">${inner}</div>`;
+      });
+    });
+
+    document.getElementById('week-grid').innerHTML = h;
+  }
+
+  function tgAppt() {
+    const el = document.getElementById('add-appt');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    if (el.style.display === 'block') ragenda();
+  }
+
+  function addAppt() {
+    const pid  = parseInt(document.getElementById('ap-pat').value);
+    const date = document.getElementById('ap-dat').value;
+    const time = document.getElementById('ap-tim').value;
+    const type = document.getElementById('ap-typ').value;
+    if (!date || !time) return;
+    appts.push({ id: nid++, pid, date, time, type, status: 'confirmado' });
+    tgAppt();
+    ragenda();
+    toast('✓ Consulta agendada com sucesso');
+  }
+
+  /* ── PACIENTES ── */
+  function renderPats(q) {
+    const fl = pats.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+    document.getElementById('pat-list').innerHTML = fl.map(p => `
+      <div class="pi" onclick="openPron(${p.id})">
+        <div class="pav ${p.type === 'psicologia' ? 'avp' : 'avn'}">${p.av}</div>
+        <div class="pn">
+          <div class="pname">${p.name}</div>
+          <div class="pmeta">${p.type === 'psicologia' ? 'Psicologia' : 'Nutrição'}<span class="sep">·</span>${p.sessions} sessões<span class="sep">·</span>desde ${p.since}</div>
+        </div>
+        <span class="badge ${p.type === 'psicologia' ? 'bpsico' : 'bnutri'}">${p.type === 'psicologia' ? 'Psico' : 'Nutri'}</span>
+      </div>`).join('');
+  }
+
+  function tgAddPat() {
+    const el = document.getElementById('add-pat');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function addPat() {
+    const name  = document.getElementById('pp-n').value.trim();
+    const type  = document.getElementById('pp-t').value;
+    const phone = document.getElementById('pp-ph').value.trim();
+    const email = document.getElementById('pp-e').value.trim();
+    if (!name) { toast('⚠ Informe o nome do paciente'); return; }
+    const av = name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+    const d = new Date();
+    const since = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    pats.push({ id: nid++, name, type, phone, email, since, sessions: 0, av });
+    ['pp-n','pp-ph','pp-e'].forEach(id => document.getElementById(id).value = '');
+    tgAddPat();
+    renderPats('');
+    document.getElementById('m2').textContent = pats.length;
+    toast('✓ Paciente ' + name + ' cadastrado');
+  }
+
+  /* ── PRONTUÁRIO ── */
+  function rpronPats() {
+    document.getElementById('pron-pats').innerHTML = pats.map(p => `
+      <div class="pi${selPat === p.id ? ' sel-pat' : ''}" onclick="openPron(${p.id})">
+        <div class="pav ${p.type === 'psicologia' ? 'avp' : 'avn'}">${p.av}</div>
+        <div class="pn">
+          <div class="pname">${p.name}</div>
+          <div class="pmeta">${p.sessions} sessões</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function openPron(id) {
+    selPat = id;
+    if (!document.getElementById('view-prontuario').classList.contains('active')) {
+      sv('prontuario'); return;
+    }
+    rpronPats();
+    const p  = gp(id);
+    const pr = recs.filter(r => r.pid === id).sort((a,b) => b.date.localeCompare(a.date));
+
+    document.getElementById('pron-main').innerHTML = `
+      <div>
+        <div class="pr-header">
+          <div class="pr-av ${p.type === 'psicologia' ? 'avp' : 'avn'}">${p.av}</div>
+          <div>
+            <div style="font-size:15px;font-weight:600;color:var(--text)">${p.name}</div>
+            <div style="font-size:11px;color:var(--text2)">${p.type === 'psicologia' ? 'Psicologia' : 'Nutrição'}<span class="sep">·</span>${p.phone}<span class="sep">·</span>${p.email}</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="st" style="margin-bottom:.75rem">Nova anotação</div>
+          <div class="fg"><label class="fl">Título</label><input type="text" class="fi" id="nt" placeholder="Ex: Sessão 14, Retorno, Avaliação..."></div>
+          <div class="fg"><label class="fl">Observações clínicas</label><textarea class="fi" id="nc" placeholder="Anotações da sessão, evolução do paciente, plano terapêutico, próximos passos..."></textarea></div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btnp" onclick="saveRec(${id})">Salvar anotação</button>
+          </div>
+        </div>
+
+        <div class="sh"><span class="st">Histórico (${pr.length} registros)</span></div>
+        <div class="card" id="recs-${id}">
+          ${pr.length
+            ? pr.map(r => `<div class="ni"><div class="nd">${r.date.split('-').reverse().join('/')}</div><div class="ntit">${r.title}</div><div class="nc">${r.text}</div></div>`).join('')
+            : '<p style="font-size:12px;color:var(--text2)">Nenhum registro ainda. Adicione a primeira anotação acima.</p>'
+          }
+        </div>
+      </div>`;
+  }
+
+  function saveRec(pid) {
+    const t = document.getElementById('nt').value.trim();
+    const c = document.getElementById('nc').value.trim();
+    if (!t) { toast('⚠ Informe um título para a anotação'); return; }
+    recs.push({ id: nid++, pid, date: TODAY, title: t, text: c });
+    openPron(pid);
+    toast('✓ Anotação salva no prontuário');
+  }
+
+  /* ── INIT ── */
+  rdash();
+</script>
+</body>
+</html>
