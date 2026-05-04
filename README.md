@@ -2,7 +2,7 @@
 
 Sistema de gestão de agenda para **psicólogos** e **nutricionistas**, 100% frontend em HTML/CSS/JS puro. Zero dependências, zero build tools.
 
-![link](https://clinappsaas.netlify.app)
+[clique aqui para visitar o site cliniapp](https://clinappsaas.netlify.app)
 
 ## ✨ Funcionalidades
 
